@@ -1,8 +1,8 @@
 """
 notify_telegram.py
 ===================
-Reads the screener's output CSV and sends a summary to a Telegram chat
-via a Telegram bot.
+Reads the screener's output CSV, sends a text summary to a Telegram chat via
+a Telegram bot, then sends the full CSV file itself as a document attachment.
 
 Setup (one-time):
 1. Open Telegram, message @BotFather, send /newbot, follow the prompts.
@@ -77,10 +77,27 @@ def send_telegram_message(token: str, chat_id: str, text: str) -> None:
             resp.raise_for_status()
 
 
+def send_telegram_document(token: str, chat_id: str, file_path: str, caption: str = "") -> None:
+    """Send a file (e.g. the full results CSV) as a Telegram document attachment.
+    Telegram's bot API caps document uploads at 50 MB, which a CSV of this size
+    will never come close to."""
+    url = f"https://api.telegram.org/bot{token}/sendDocument"
+    with open(file_path, "rb") as f:
+        resp = requests.post(
+            url,
+            data={"chat_id": chat_id, "caption": caption[:1024]},  # captions are capped at 1024 chars
+            files={"document": (os.path.basename(file_path), f, "text/csv")},
+        )
+    if resp.status_code != 200:
+        print(f"Telegram API error {resp.status_code}: {resp.text}", file=sys.stderr)
+        resp.raise_for_status()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Send screener results to Telegram")
     parser.add_argument("--results", default="thailand_screen_results.csv", help="Path to the results CSV")
     parser.add_argument("--top-n", type=int, default=15, help="Max stocks to list per section")
+    parser.add_argument("--skip-file", action="store_true", help="Only send the text summary, not the full CSV file")
     args = parser.parse_args()
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -93,7 +110,14 @@ def main():
 
     message = build_message(args.results, args.top_n)
     send_telegram_message(token, chat_id, message)
-    print("Sent results to Telegram.")
+    print("Sent summary message to Telegram.")
+
+    if not args.skip_file:
+        send_telegram_document(
+            token, chat_id, args.results,
+            caption=f"Full results — {pd.Timestamp.now().strftime('%Y-%m-%d')}"
+        )
+        print("Sent full CSV file to Telegram.")
 
 
 if __name__ == "__main__":
