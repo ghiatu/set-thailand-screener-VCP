@@ -83,6 +83,28 @@ above, then commit that CSV to the repo. Update `.github/workflows/screener.yml`
 ```
 Re-generate and re-commit `thailand_all_tickers.csv` every few months as SET adds/removes listings.
 
+## Send results to Telegram
+
+**One-time setup:**
+1. In Telegram, message **@BotFather** → send `/newbot` → follow the prompts to name your bot. It gives you a token like `123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxx`.
+2. Start a chat with your new bot (search its `@username`, send it any message — e.g. "hi").
+3. Get your chat ID: visit `https://api.telegram.org/botTOKEN/getUpdates` in a browser (replace `TOKEN`
+   with your real token), after having sent the bot a message. Look for `"chat":{"id": ...}` in the response.
+4. Add both as GitHub repo secrets: **Settings → Secrets and variables → Actions → New repository secret**
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
+
+**Run locally:**
+```bash
+export TELEGRAM_BOT_TOKEN="your_token"
+export TELEGRAM_CHAT_ID="your_chat_id"
+python notify_telegram.py --results thailand_screen_results.csv
+```
+(Windows PowerShell: use `$env:TELEGRAM_BOT_TOKEN="..."` instead of `export`.)
+
+The GitHub Actions workflow already sends the Telegram message automatically after each run once
+the two secrets above are set — no extra steps needed there.
+
 ## Run via GitHub Actions
 
 1. Push this folder to a GitHub repo.

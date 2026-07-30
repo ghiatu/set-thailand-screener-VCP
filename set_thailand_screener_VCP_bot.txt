@@ -1,0 +1,5 @@
+set_thailand_screener_VCP_bot
+@set_thailand_screener_VCP_bot
+
+Telegram token:8953407206:AAGLuWXkZl4305Ng8UYCA9t3RcbneUV-oYU
+TELEGRAM_CHAT_ID : 6560659347
