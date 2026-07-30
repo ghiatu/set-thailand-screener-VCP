@@ -9,6 +9,8 @@ on:
 jobs:
   screen:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed so this job can commit the results file back
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -24,12 +26,19 @@ jobs:
       - name: Run screener
         run: python set100_screener.py --tickers-file thailand_all_tickers.csv --out thailand_screen_results.csv
 
+      - name: Send results to Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python notify_telegram.py --results thailand_screen_results.csv
+
       - name: Commit results back to the repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add thailand_screen_results.csv
           git diff --quiet --cached || git commit -m "Update Thailand screen results ($(date -u +%Y-%m-%d))"
+          git pull --rebase origin main
           git push
 
       - name: Upload results as an artifact too
